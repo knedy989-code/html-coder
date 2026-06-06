@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML Code Editor & Standalone Exporter</title>
+    <title>HTML Sandbox & Direct Viewer</title>
     <style>
         * {
             box-sizing: border-box;
@@ -35,13 +35,8 @@
             color: #4fc1ff;
         }
 
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
-
         button {
-            background-color: #0e639c;
+            background-color: #47a247;
             color: white;
             border: none;
             padding: 8px 16px;
@@ -52,15 +47,7 @@
         }
 
         button:hover {
-            background-color: #1177bb;
-        }
-
-        #share-btn {
-            background-color: #e51c23;
-        }
-
-        #share-btn:hover {
-            background-color: #ff333a;
+            background-color: #5cb85c;
         }
 
         .app-container {
@@ -134,7 +121,7 @@
 
         .modal-content h3 {
             margin-bottom: 15px;
-            color: #ff333a;
+            color: #4fc1ff;
         }
 
         .link-input-container {
@@ -156,15 +143,20 @@
             background-color: #555;
             float: right;
         }
+
+        /* Fullscreen view-only styling if someone clicks the shared link */
+        body.view-mode header, 
+        body.view-mode .panel:nth-child(1), 
+        body.view-mode .divider {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
 
-    <header>
+    <header id="editor-header">
         <h1>⚡ HTML Sandbox</h1>
-        <div class="actions">
-            <button id="share-btn" onclick="generateDirectLink()">🚀 Live Website Link</button>
-        </div>
+        <button onclick="generateCleanLink()">🚀 Generate Website Link</button>
     </header>
 
     <div class="app-container">
@@ -177,19 +169,18 @@
         body { 
             font-family: sans-serif; 
             text-align: center; 
-            background: linear-gradient(135deg, #1d976c, #93f9b9);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             padding-top: 100px;
             height: 100vh;
             margin: 0;
         }
-        h1 { font-size: 3.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-        p { font-size: 1.2rem; }
+        h1 { font-size: 3.5rem; }
     </style>
 </head>
 <body>
-    <h1>It Works! 🎉</h1>
-    <p>This is a direct link to your creation without the code editor.</p>
+    <h1>It's a Real Link Now! 🌐</h1>
+    <p>This opens instantly as a fullscreen web page layout.</p>
 </body>
 </html></textarea>
         </div>
@@ -197,15 +188,15 @@
         <div class="divider"></div>
 
         <div class="panel">
-            <div class="panel-title">Live Preview</div>
+            <div id="preview-header-title" class="panel-title">Live Preview</div>
             <iframe id="preview-window"></iframe>
         </div>
     </div>
 
     <div id="link-modal" class="modal">
         <div class="modal-content">
-            <h3>Website Link Ready!</h3>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">This link opens your creation directly as an independent web page:</p>
+            <h3>Your Link is Ready!</h3>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">This regular link will load your creation in full screen mode:</p>
             <div class="link-input-container">
                 <input type="text" id="generated-link" readonly>
                 <button onclick="copyLink()">Copy</button>
@@ -227,14 +218,20 @@
             previewDoc.close();
         }
 
-        // NEW LOGIC: Generates a standalone URL that ONLY loads the creation
-        function generateDirectLink() {
+        // Generates a standard URL link that has code tucked away inside it
+        function generateCleanLink() {
             const code = codeInput.value;
+            const encryptedCode = btoa(unescape(encodeURIComponent(code)));
             
-            // Creates a raw data URL with HTML content type
-            const standaloneUrl = "data:text/html;charset=utf-8," + encodeURIComponent(code);
+            // Clean up base URL handling so it handles trailing slashes or index.html seamlessly on GitHub Pages
+            let currentUrl = window.location.href.split('#')[0].split('?')[0];
+            if (currentUrl.endsWith('/')) {
+                currentUrl += 'index.html';
+            }
             
-            document.getElementById('generated-link').value = standaloneUrl;
+            const cleanUrl = currentUrl + '?view=true#' + encryptedCode;
+            
+            document.getElementById('generated-link').value = cleanUrl;
             document.getElementById('link-modal').style.display = 'flex';
         }
 
@@ -243,15 +240,36 @@
             linkInput.select();
             linkInput.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(linkInput.value);
-            alert("Direct website link copied to clipboard!");
+            alert("Link copied! You can now paste this anywhere as a clickable link.");
         }
 
         function closeModal() {
             document.getElementById('link-modal').style.display = 'none';
         }
 
-        // Run the preview immediately when the page loads
-        window.onload = updatePreview;
+        // On page load: Check if the URL has "?view=true" in it
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isViewMode = urlParams.get('view');
+            const hash = window.location.hash.substring(1);
+
+            if (hash) {
+                try {
+                    const decodedCode = decodeURIComponent(escape(atob(hash)));
+                    codeInput.value = decodedCode;
+                } catch (e) {
+                    console.error("Could not parse shared code.");
+                }
+            }
+
+            // If "?view=true" is in the link, hide the editor and make preview fullscreen!
+            if (isViewMode === 'true') {
+                document.body.classList.add('view-mode');
+                document.getElementById('preview-header-title').style.display = 'none';
+            }
+
+            updatePreview();
+        }
     </script>
 </body>
 </html>
