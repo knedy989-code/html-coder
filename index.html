@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML Code Editor & Previewer</title>
+    <title>HTML Code Editor & Standalone Exporter</title>
     <style>
         * {
             box-sizing: border-box;
@@ -56,11 +56,11 @@
         }
 
         #share-btn {
-            background-color: #47a247;
+            background-color: #e51c23;
         }
 
         #share-btn:hover {
-            background-color: #5cb85c;
+            background-color: #ff333a;
         }
 
         .app-container {
@@ -134,7 +134,7 @@
 
         .modal-content h3 {
             margin-bottom: 15px;
-            color: #4fc1ff;
+            color: #ff333a;
         }
 
         .link-input-container {
@@ -161,9 +161,9 @@
 <body>
 
     <header>
-        <h1>⚡ HTML Sandbox & Share</h1>
+        <h1>⚡ HTML Sandbox</h1>
         <div class="actions">
-            <button id="share-btn" onclick="generateLink()">🔗 Generate Share Link</button>
+            <button id="share-btn" onclick="generateDirectLink()">🚀 Live Website Link</button>
         </div>
     </header>
 
@@ -177,16 +177,19 @@
         body { 
             font-family: sans-serif; 
             text-align: center; 
-            background: linear-gradient(to right, #f74c06, #f9bc2c);
+            background: linear-gradient(135deg, #1d976c, #93f9b9);
             color: white;
-            padding-top: 50px;
+            padding-top: 100px;
+            height: 100vh;
+            margin: 0;
         }
-        h1 { font-size: 3rem; }
+        h1 { font-size: 3.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        p { font-size: 1.2rem; }
     </style>
 </head>
 <body>
-    <h1>Hello World! 👋</h1>
-    <p>Change this code to see the magic happen instantly.</p>
+    <h1>It Works! 🎉</h1>
+    <p>This is a direct link to your creation without the code editor.</p>
 </body>
 </html></textarea>
         </div>
@@ -201,8 +204,8 @@
 
     <div id="link-modal" class="modal">
         <div class="modal-content">
-            <h3>Your Link is Ready!</h3>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">Anyone with this link can view and edit your creation:</p>
+            <h3>Website Link Ready!</h3>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">This link opens your creation directly as an independent web page:</p>
             <div class="link-input-container">
                 <input type="text" id="generated-link" readonly>
                 <button onclick="copyLink()">Copy</button>
@@ -215,7 +218,7 @@
         const codeInput = document.getElementById('html-code');
         const previewWindow = document.getElementById('preview-window');
 
-        // 1. Live Preview Logic
+        // Live Preview Logic
         function updatePreview() {
             const code = codeInput.value;
             const previewDoc = previewWindow.contentDocument || previewWindow.contentWindow.document;
@@ -224,44 +227,31 @@
             previewDoc.close();
         }
 
-        // 2. Link Generation Logic (Saves data directly inside the URL hash)
-        function generateLink() {
+        // NEW LOGIC: Generates a standalone URL that ONLY loads the creation
+        function generateDirectLink() {
             const code = codeInput.value;
-            // Compress and convert code text into a safe URL format (Base64)
-            const encryptedCode = btoa(unescape(encodeURIComponent(code)));
-            const shareUrl = window.location.origin + window.location.pathname + '#' + encryptedCode;
             
-            document.getElementById('generated-link').value = shareUrl;
+            // Creates a raw data URL with HTML content type
+            const standaloneUrl = "data:text/html;charset=utf-8," + encodeURIComponent(code);
+            
+            document.getElementById('generated-link').value = standaloneUrl;
             document.getElementById('link-modal').style.display = 'flex';
         }
 
         function copyLink() {
             const linkInput = document.getElementById('generated-link');
             linkInput.select();
-            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            linkInput.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(linkInput.value);
-            alert("Link copied to clipboard!");
+            alert("Direct website link copied to clipboard!");
         }
 
         function closeModal() {
             document.getElementById('link-modal').style.display = 'none';
         }
 
-        // 3. Page Load Logic: Check if someone opened a shared link
-        window.onload = function() {
-            const hash = window.location.hash.substring(1);
-            if (hash) {
-                try {
-                    // Turn the encoded URL characters back into raw HTML code
-                    const decodedCode = decodeURIComponent(escape(atob(hash)));
-                    codeInput.value = decodedCode;
-                } catch (e) {
-                    alert("Oops, looks like the shared link was broken or incomplete!");
-                }
-            }
-            // Run the preview immediately on load
-            updatePreview();
-        }
+        // Run the preview immediately when the page loads
+        window.onload = updatePreview;
     </script>
 </body>
 </html>
