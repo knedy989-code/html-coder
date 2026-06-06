@@ -144,7 +144,7 @@
             float: right;
         }
 
-        /* Fullscreen view-only styling if someone clicks the shared link */
+        /* Fullscreen view-only styling */
         body.view-mode header, 
         body.view-mode .panel:nth-child(1), 
         body.view-mode .divider {
@@ -169,7 +169,7 @@
         body { 
             font-family: sans-serif; 
             text-align: center; 
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #11998e, #38ef7d);
             color: white;
             padding-top: 100px;
             height: 100vh;
@@ -179,8 +179,8 @@
     </style>
 </head>
 <body>
-    <h1>It's a Real Link Now! 🌐</h1>
-    <p>This opens instantly as a fullscreen web page layout.</p>
+    <h1>Fixed & Working! 🎉</h1>
+    <p>This is your standalone webpage preview running smoothly.</p>
 </body>
 </html></textarea>
         </div>
@@ -196,7 +196,7 @@
     <div id="link-modal" class="modal">
         <div class="modal-content">
             <h3>Your Link is Ready!</h3>
-            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">This regular link will load your creation in full screen mode:</p>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">This link will open your code directly in full screen view:</p>
             <div class="link-input-container">
                 <input type="text" id="generated-link" readonly>
                 <button onclick="copyLink()">Copy</button>
@@ -209,7 +209,6 @@
         const codeInput = document.getElementById('html-code');
         const previewWindow = document.getElementById('preview-window');
 
-        // Live Preview Logic
         function updatePreview() {
             const code = codeInput.value;
             const previewDoc = previewWindow.contentDocument || previewWindow.contentWindow.document;
@@ -218,18 +217,15 @@
             previewDoc.close();
         }
 
-        // Generates a standard URL link that has code tucked away inside it
         function generateCleanLink() {
             const code = codeInput.value;
+            
+            // We use a safe URL fragment identifier (#) which servers ignore, stopping security blocks
             const encryptedCode = btoa(unescape(encodeURIComponent(code)));
+            let currentUrl = window.location.href.split('#')[0];
             
-            // Clean up base URL handling so it handles trailing slashes or index.html seamlessly on GitHub Pages
-            let currentUrl = window.location.href.split('#')[0].split('?')[0];
-            if (currentUrl.endsWith('/')) {
-                currentUrl += 'index.html';
-            }
-            
-            const cleanUrl = currentUrl + '?view=true#' + encryptedCode;
+            // Forces the keyword 'view' right into the hash fragment safely
+            const cleanUrl = currentUrl + '#view=' + encryptedCode;
             
             document.getElementById('generated-link').value = cleanUrl;
             document.getElementById('link-modal').style.display = 'flex';
@@ -240,32 +236,30 @@
             linkInput.select();
             linkInput.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(linkInput.value);
-            alert("Link copied! You can now paste this anywhere as a clickable link.");
+            alert("Link copied! Paste this in a new tab to see your creation fullscreen.");
         }
 
         function closeModal() {
             document.getElementById('link-modal').style.display = 'none';
         }
 
-        // On page load: Check if the URL has "?view=true" in it
+        // Run checking operations safely on load
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const isViewMode = urlParams.get('view');
-            const hash = window.location.hash.substring(1);
+            const hashData = window.location.hash.substring(1);
 
-            if (hash) {
+            // Checks if the link has our custom hash view command
+            if (hashData.startsWith('view=')) {
+                const pureCodeHash = hashData.replace('view=', '');
                 try {
-                    const decodedCode = decodeURIComponent(escape(atob(hash)));
+                    const decodedCode = decodeURIComponent(escape(atob(pureCodeHash)));
                     codeInput.value = decodedCode;
+                    
+                    // Trigger fullscreen mode layout
+                    document.body.classList.add('view-mode');
+                    document.getElementById('preview-header-title').style.display = 'none';
                 } catch (e) {
-                    console.error("Could not parse shared code.");
+                    console.error("Link parsing failed.");
                 }
-            }
-
-            // If "?view=true" is in the link, hide the editor and make preview fullscreen!
-            if (isViewMode === 'true') {
-                document.body.classList.add('view-mode');
-                document.getElementById('preview-header-title').style.display = 'none';
             }
 
             updatePreview();
